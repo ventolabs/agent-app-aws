@@ -3,12 +3,12 @@ from typing import List, Optional
 
 from agents.sage import get_sage
 from agents.scholar import get_scholar
-
+from agents.crypto.crypto_bro import get_crypto_bro
 
 class AgentType(Enum):
     SAGE = "sage"
     SCHOLAR = "scholar"
-
+    CRYPTO_BRO = "crypto_bro"
 
 def get_available_agents() -> List[str]:
     """Returns a list of all available agent IDs."""
@@ -24,5 +24,7 @@ def get_agent(
 ):
     if agent_id == AgentType.SAGE:
         return get_sage(model_id=model_id, user_id=user_id, session_id=session_id, debug_mode=debug_mode)
+    elif agent_id == AgentType.CRYPTO_BRO:
+        return get_crypto_bro(model_id=model_id, user_id=user_id, session_id=session_id, debug_mode=debug_mode)
     else:
         return get_scholar(model_id=model_id, user_id=user_id, session_id=session_id, debug_mode=debug_mode)

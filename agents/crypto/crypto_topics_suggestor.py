@@ -21,7 +21,7 @@ class CryptoTopic(BaseModel):
     title: str = Field(..., description="Title of the crypto topic")
     summary: str = Field(..., description="Brief summary of the topic")
     source: str = Field(..., description="Source of the information")
-    relevance_score: int = Field(..., description="Relevance score from 1-10", ge=1, le=10)
+    relevance_score: int = Field(..., description="Relevance score of the topic. Acceptable values are 1-10")
 
 
 class CryptoQuestion(BaseModel):

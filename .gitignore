@@ -30,3 +30,6 @@ dist
 # ignore virtualenvs
 .venv*
 venv*
+
+# ignore local files
+*.local

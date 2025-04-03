@@ -64,7 +64,7 @@ class WavesTools(Toolkit):
         self.register(self.get_puzzle_lend_markets)
         self.register(self.get_pool_apy)
         self.register(self.get_usdt_pools)
-        self.register(self.get_wave_balance)
+        self.register(self.get_waves_balance)
         self.register(self.get_token_balance)
         self.register(self.transfer_token)
         self.register(self.stake_in_pool)
@@ -195,11 +195,13 @@ class WavesTools(Toolkit):
                 
             log_debug(f"Fetching WAVES balance for {target_address}")
             addr = pw.Address(address=target_address)
+
+            balance = addr.balance()
             
             balance_info = {
                 "address": target_address,
-                "waves_balance": addr.balance(),
-                "formatted_balance": f"{addr.balance() / 10**8:.8f} WAVES"
+                "waves_balance": balance,
+                "formatted_balance": f"{balance / 10**8:.8f} WAVES"
             }
             return json.dumps(balance_info, indent=2)
         except Exception as e:

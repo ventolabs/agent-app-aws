@@ -17,6 +17,7 @@ class WavesSettings(BaseSettings):
     waves_chain: str = Field(default="mainnet", description="The Waves chain")
     waves_puzzle_lend_address: str|None = Field(default="3P2mUshsGaj2B5A9rSD4wwXk47fHB16Sidk", description="The Waves puzzle lend address")
     waves_private_key: str|None = Field(default=None, description="The Waves private key")
+    waves_mock_private_key: str|None = Field(default=None, description="The Waves mock private key")
 
 
 class ToolsSettings(BaseSettings):
@@ -27,6 +28,8 @@ class ToolsSettings(BaseSettings):
     
     def is_local_env(self):
         return self.env == LOCAL_ENV
+    
+settings = ToolsSettings()
 
 
     

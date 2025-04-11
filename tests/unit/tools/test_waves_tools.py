@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 # Adjust the import path based on your project structure
 from tools.crypto.waves.waves import WavesTools
 from tools.settings import settings
+from tools.crypto.waves.exceptions import WavesException
 
 # --- Mock Data ---
 
@@ -208,3 +209,105 @@ def test_get_token_balance_initialized_address(mock_pw_address, mock_pw_asset, w
     assert result["asset_name"] == "MockToken"
     assert result["balance"] == 500000000
     assert result["formatted_balance"] == "500.000000 MockToken"
+
+@patch('pywaves.Address')
+def test_invoke_script_success(mock_pw_address, waves_tools_with_key):
+    """Test successful invocation of a dApp script function."""
+    # Create mock address instance with invokeScript method
+    mock_addr_instance = MagicMock()
+    mock_invoke_result = {
+        "id": "mockTxId123456789",
+        "timestamp": 1678900000000,
+        "height": 12345
+    }
+    mock_addr_instance.invokeScript.return_value = mock_invoke_result
+    waves_tools_with_key.address = mock_addr_instance
+    
+    # Define test parameters
+    dapp_address = "3PAbcDefGhiJkLmNoPqRsTuVwXyZ"
+    function_name = "deposit"
+    params = [
+        {"type": "string", "value": "param1"},
+        {"type": "integer", "value": 123}
+    ]
+    payments = [
+        {"assetId": "WAVES", "amount": 1.5},  # Should be converted to 150000000 (1.5 * 10^8)
+        {"assetId": "mockAssetId", "amount": 100}
+    ]
+    
+    # Create a mock Asset for the non-WAVES asset in payments
+    mock_asset = MagicMock()
+    type(mock_asset).decimals = PropertyMock(return_value=6)
+    
+    with patch('pywaves.Asset', return_value=mock_asset):
+        # Call the method
+        result_json = waves_tools_with_key.invoke_script(
+            dapp_address=dapp_address,
+            function_name=function_name,
+            params=params,
+            payments=payments,
+            description="Test invocation"
+        )
+    
+    # Parse the result for assertions
+    result = json.loads(result_json)
+    
+    # Verify the invokeScript was called with correct parameters
+    expected_payments = [
+        {"assetId": "WAVES", "amount": 150000000},  # Converted to wavelets
+        {"assetId": "mockAssetId", "amount": 100}   # Not converted because we didn't make it a float
+    ]
+    
+    mock_addr_instance.invokeScript.assert_called_once()
+    call_args = mock_addr_instance.invokeScript.call_args[1]
+    
+    # Basic assertions
+    assert result["success"] == True
+    assert result["transaction_id"] == "mockTxId123456789"
+    assert result["dapp_address"] == dapp_address
+    assert result["function"] == function_name
+    
+    # Detailed parameter assertions
+    assert call_args["dappAddress"] == dapp_address
+    assert call_args["functionName"] == function_name
+    assert call_args["params"] == params
+    
+    # Ensure payment amount for WAVES was properly converted
+    assert len(call_args["payments"]) == 2
+    assert call_args["payments"][0]["assetId"] == "WAVES"
+    assert call_args["payments"][0]["amount"] == 150000000  # 1.5 WAVES in wavelets
+
+@patch('pywaves.Address')
+def test_invoke_script_no_private_key(mock_pw_address, waves_tools_no_key):
+    """Test that invoking a script without a private key raises an exception."""
+    with pytest.raises(WavesException) as excinfo:
+        waves_tools_no_key.invoke_script(
+            dapp_address="3PAbcDefGhiJkLmNoPqRsTuVwXyZ",
+            function_name="test"
+        )
+    
+    assert "Private key not available" in str(excinfo.value)
+
+@patch('pywaves.Address')
+def test_invoke_script_transaction_error(mock_pw_address, waves_tools_with_key):
+    """Test handling of a transaction error from the blockchain."""
+    # Create mock address instance with invokeScript method that returns an error
+    mock_addr_instance = MagicMock()
+    mock_invoke_result = {
+        "id": "mockTxId123456789",
+        "timestamp": 1678900000000,
+        "error": "Transaction validation failed: Insufficient funds"
+    }
+    mock_addr_instance.invokeScript.return_value = mock_invoke_result
+    waves_tools_with_key.address = mock_addr_instance
+    
+    result_json = waves_tools_with_key.invoke_script(
+        dapp_address="3PAbcDefGhiJkLmNoPqRsTuVwXyZ",
+        function_name="test"
+    )
+    
+    result = json.loads(result_json)
+    
+    assert result["success"] == False
+    assert "error" in result
+    assert result["error"] == "Transaction validation failed: Insufficient funds"

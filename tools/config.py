@@ -15,7 +15,7 @@ class WavesSettings(BaseSettings):
 
     waves_node: str = Field(default="https://nodes.wavesnodes.com", description="The Waves node URL")
     waves_chain: str = Field(default="mainnet", description="The Waves chain")
-    waves_puzzle_lend_address: str|None = Field(default="3P2mUshsGaj2B5A9rSD4wwXk47fHB16Sidk", description="The Waves puzzle lend address")
+    waves_address: str = Field(default="3PAkXRMibqvwW5hXN2CTTWypVUYyDPsdgh6", description="The Waves address")
     waves_private_key: str|None = Field(default=None, description="The Waves private key")
     waves_mock_private_key: str|None = Field(default=None, description="The Waves mock private key")
 

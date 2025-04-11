@@ -22,6 +22,10 @@ COPY . .
 # Set permissions for the /app directory
 RUN chown -R ${USER}:${USER} ${APP_DIR}
 
+# Copy .env file and set environment variables
+COPY .env .env
+ENV $(cat .env | grep -v '^#' | xargs)
+
 # Switch to non-root user
 USER ${USER}
 

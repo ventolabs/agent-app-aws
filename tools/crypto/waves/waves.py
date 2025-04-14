@@ -27,6 +27,7 @@ class WavesUsdtTools(Toolkit):
     3. Get the balance of USDT for an address.
     4. Stake assets in a Puzzle Lend USDT liquidity pool.
     5. Unstake (withdraw) assets from a Puzzle Lend USDT liquidity pool.
+    6. Swap tokens using the Puzzle Swap aggregator.
     
     Args:
         node (str): Waves node URL
@@ -70,6 +71,7 @@ class WavesUsdtTools(Toolkit):
         self.register(self.puzzle_lend_supply_assets)
         self.register(self.puzzle_lend_withdraw_assets)
         self.register(self.get_wallet_usdt_balance)
+        self.register(self.puzzle_swap_tokens)
 
     def evaluate_smart_contract(self, expr: str) -> str:
         """
@@ -176,7 +178,7 @@ class WavesUsdtTools(Toolkit):
                 - market_name: Name of the market
                 - market_address: Address of the market
                 - market_active: Whether the market is active
-                - market_supply_apy: Supply APY of the market
+                - market_supply_apy: Supply APY of the market. The value is in the format where 1 equals 1% (e.g. 5.5 means 5.5%)
                 - asset_id: Asset ID
                 - asset_name: Asset name
                 - asset_supply: Supply of the asset
@@ -201,7 +203,7 @@ class WavesUsdtTools(Toolkit):
                             "market_name": market.get("name", ""),
                             "market_address": market.get("address", ""),
                             "market_active": market.get("active", False),
-                            "market_supply_apy": asset["supplyApy"]["quantity"]/10**(asset["supplyApy"]["decimals"]),
+                            "market_supply_apy": asset["supplyApy"]["quantity"]/10**(asset["supplyApy"]["decimals"] - 2),
                             # "market_borrow_apy": asset["borrowApy"]["quantity"]/10**(asset["borrowApy"]["decimals"]),
                             # "market_utilization_ratio": asset["utilizationRatio"]["quantity"]/10**(asset["utilizationRatio"]["decimals"]),
                             "asset_id": asset["supply"]["id"],
@@ -444,14 +446,14 @@ class WavesUsdtTools(Toolkit):
                 if asset_id == 'WAVES' or asset_id is None:
                     if isinstance(amount, float):
                         amount = int(amount * 10**8)  # Convert WAVES to wavelets
-            else:
-                # For other assets, we need to determine decimals
-                try:
-                    asset = pw.Asset(asset_id)
-                    if isinstance(amount, float):
-                        amount = int(amount * 10**asset.decimals)
-                except Exception as e:
-                    raise WavesInvalidAsset(f"Failed to process payment asset {asset_id}: {str(e)}")
+                else:
+                    # For other assets, we need to determine decimals
+                    try:
+                        asset = pw.Asset(asset_id)
+                        if isinstance(amount, float):
+                            amount = int(amount * 10**asset.decimals)
+                    except Exception as e:
+                        raise WavesInvalidAsset(f"Failed to process payment asset {asset_id}: {str(e)}")
                 
                 processed_payments.append({
                     'assetId': asset_id,
@@ -739,7 +741,8 @@ class WavesUsdtTools(Toolkit):
         try:
             # Resolve input token
             input_asset_id = input_token
-            if len(input_token) > 15:
+            if len(input_token) < 15:
+                log_debug(f"Resolving input token name: {input_token}")
                 resolved_input = self.get_asset_id_by_name(input_token)
                 if not resolved_input:
                     raise WavesException(f"Could not resolve input token name: {input_token}")
@@ -747,7 +750,8 @@ class WavesUsdtTools(Toolkit):
             
             # Resolve output token
             output_asset_id = output_token
-            if len(output_token) > 15:
+            if len(output_token) < 15:
+                log_debug(f"Resolving output token name: {output_token}")
                 resolved_output = self.get_asset_id_by_name(output_token)
                 if not resolved_output:
                     raise WavesException(f"Could not resolve output token name: {output_token}")

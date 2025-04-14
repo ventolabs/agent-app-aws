@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 
 # Adjust the import path based on your project structure
 from tools.crypto.waves.waves import WavesTools
-from tools.settings import settings
+from tools.config import settings
 from tools.crypto.waves.exceptions import WavesException
 
 # --- Mock Data ---

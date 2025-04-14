@@ -7,7 +7,6 @@
 #     category: list[str],
 # }
 
-
 TOKENS = {
     "AP4Cb5xLYGH6ZigHreCZHoXpQTWDkPsG2BHqfDUx6taJ": {
         "name": "ROME",
